@@ -2,10 +2,13 @@ import { createReducer } from "@reduxjs/toolkit";
 
 const initialState = {
   data:[],
-
+  currentData:[]
 };
 export const customReducer = createReducer(initialState, {
-  updateProducts: (state, action) => {
+  updateData: (state, action) => {
+    state.data = action.payload;
+  },
+  updateCurrentData: (state, action) => {
     state.data = action.payload;
   },
 

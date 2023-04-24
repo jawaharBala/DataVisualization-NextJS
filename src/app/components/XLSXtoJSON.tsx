@@ -1,8 +1,15 @@
 import { useState } from "react";
 import { WorkBook, read, utils } from "xlsx";
+import { useDispatch } from "react-redux";
 const XLSXtoJSON = () => {
   const [file, setFile] = useState<File | null>();
- 
+  const dispatch = useDispatch();
+  const setItems = (payload: any) => {
+    dispatch({
+      type: "updateData",
+      payload: payload,
+    });
+  };
 
   const setData = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -10,12 +17,12 @@ const XLSXtoJSON = () => {
     }
   };
 
-  const uploadFile = async (e:React.MouseEvent<HTMLElement>) => {
+  const uploadFile = async (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
-    const data:ArrayBuffer = await file!?.arrayBuffer();
-    const workbook:WorkBook = read(data);
+    const data: ArrayBuffer = await file!?.arrayBuffer();
+    const workbook: WorkBook = read(data);
     const newJson = workbook.Sheets[workbook.SheetNames[0]];
-
+    setItems(newJson);
     console.log(utils.sheet_to_json(newJson));
   };
 
@@ -38,7 +45,10 @@ const XLSXtoJSON = () => {
             Please upload a .XLSX file
           </p>
         </label>
-        <button onClick={(e)=>uploadFile(e)} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full ">
+        <button
+          onClick={(e) => uploadFile(e)}
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full "
+        >
           Upload
         </button>
       </form>

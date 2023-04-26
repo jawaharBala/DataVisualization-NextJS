@@ -31,7 +31,18 @@ const MapContainer = ({ google }: any) => {
     activeMarker: {} as google.maps.Marker,
     showingInfoWindow: false as boolean,
   });
-
+  const colors: string[] = [
+    "#b71c1c",
+    "#880e4f",
+    "#4a148c",
+    "#311b92",
+    "#1a237e",
+    "#006064",
+    "#1b5e20",
+    "#827717",
+    "#3e2723",
+    "3212121",
+  ];
   useEffect(() => {
     {
       data?.length > 0 &&
@@ -56,12 +67,38 @@ const MapContainer = ({ google }: any) => {
   };
   const displayTooltip = (props: IMarkerProps | any, marker: any) => {
     setInfoToolTip({
-      selectedPlace: props.name.store,
+      selectedPlace: props.name.data,
       activeMarker: marker,
       showingInfoWindow: true,
     });
   };
-  const SVGMarker = encodeSvg(MarkerIcon("red"));
+  const SVGMarker = (data: Climatedata) => {
+    let markerColor;
+    let diff: number = 1 - data["Risk Rating"];
+    if (diff > 0.9) {
+      markerColor = colors[0];
+    } else if (diff > 0.8) {
+      markerColor = colors[1];
+    } else if (diff > 0.7) {
+      markerColor = colors[2];
+    } else if (diff > 0.6) {
+      markerColor = colors[3];
+    } else if (diff > 0.5) {
+      markerColor = colors[4];
+    } else if (diff > 0.4) {
+      markerColor = colors[5];
+    } else if (diff > 0.3) {
+      markerColor = colors[6];
+    } else if (diff > 0.2) {
+      markerColor = colors[7];
+    } else if (diff > 0.1) {
+      markerColor = colors[8];
+    } else {
+      markerColor = colors[9];
+    }
+
+    return encodeSvg(MarkerIcon(markerColor));
+  };
   return (
     <>
       <Controls getDataForCurrentDecade={getDataForCurrentDecade} />
@@ -71,20 +108,18 @@ const MapContainer = ({ google }: any) => {
           zoom={5}
           style={mapStyles}
           initialCenter={initialCenter}
-         
         >
-          {markerData?.map((store: Climatedata, index: number) => {
+          {markerData?.map((data: Climatedata, index: number) => {
             return (
               <Marker
-                icon={SVGMarker}
+                icon={SVGMarker(data)}
                 onMouseover={displayTooltip}
                 key={index}
                 position={{
-                  lat: store.Lat,
-                  lng: store.Long,
+                  lat: data.Lat,
+                  lng: data.Long,
                 }}
-                name={{ store }}
-                
+                name={{ data }}
               ></Marker>
             );
           })}

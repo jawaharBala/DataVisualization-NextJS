@@ -8,7 +8,4 @@ export interface Climatedata {
     Year: number
 };
 
-export interface InitialCenter {
-    lat:number,
-    lng:number
-}
+

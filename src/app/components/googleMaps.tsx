@@ -5,17 +5,22 @@ import {
   Marker,
   InfoWindow,
   IMarkerProps,
-  IInfoWindowProps,
 } from "google-maps-react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import "./googleMaps.css";
 import { Climatedata } from "@/utils/interfaces";
+import Controls from "./controls";
+import { MarkerIcon, encodeSvg } from "../../../public/dynamic icons/svgIcon";
 
 const MapContainer = ({ google }: any) => {
   const data = useSelector((store: any) => {
     return store.custom.data as Climatedata[];
   });
 
+  const decadeYears = useSelector((store: any) => {
+    return store.custom.decadeYears as number[];
+  });
+  const [markerData, setMarkerData] = useState<Climatedata[]>();
   const [initialCenter, setInitialCenter] = useState<any>({
     lat: 45.43341,
     lng: -73.86586,
@@ -32,16 +37,18 @@ const MapContainer = ({ google }: any) => {
       data?.length > 0 &&
         setInitialCenter({ lat: data[0].Lat, lng: data[0].Long });
     }
-    let data1: number[] = [];
-    data.map((e)=>{
-            // console.log(e["Risk Rating"])
-
-     return  data1.push(e["Risk Rating"]);
-    });
-   console.log(new Set([...data1]))
-
+    {
+      decadeYears?.length > 0 && getDataForCurrentDecade(decadeYears[0]);
+    }
   }, [data]);
 
+  const getDataForCurrentDecade = (year: number) => {
+    let finalData = [...data];
+    finalData = finalData?.filter((climateData) => {
+      return climateData.Year === year;
+    });
+    setMarkerData(finalData);
+  };
 
   const mapStyles = {
     width: "100%",
@@ -54,25 +61,30 @@ const MapContainer = ({ google }: any) => {
       showingInfoWindow: true,
     });
   };
+  const SVGMarker = encodeSvg(MarkerIcon("red"));
   return (
     <>
-      {data.length > 0 && (
+      <Controls getDataForCurrentDecade={getDataForCurrentDecade} />
+      {markerData!?.length > 0 && (
         <Map
           google={google}
           zoom={5}
           style={mapStyles}
           initialCenter={initialCenter}
+         
         >
-          {data.map((store: Climatedata, index: number) => {
+          {markerData?.map((store: Climatedata, index: number) => {
             return (
               <Marker
-                onMouseover={displayTooltip}           
+                icon={SVGMarker}
+                onMouseover={displayTooltip}
                 key={index}
                 position={{
                   lat: store.Lat,
                   lng: store.Long,
                 }}
-                name={{store}}            
+                name={{ store }}
+                
               ></Marker>
             );
           })}
@@ -86,7 +98,7 @@ const MapContainer = ({ google }: any) => {
                   Asset Name: {infoToolTip.selectedPlace["Asset Name"]}
                 </h3>
                 <h3 className="Marker-data">
-                  Business Category: 
+                  Business Category:
                   {infoToolTip.selectedPlace["Business Category"]}
                 </h3>
               </div>

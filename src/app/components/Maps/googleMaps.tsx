@@ -6,27 +6,32 @@ import {
   InfoWindow,
   IMarkerProps,
 } from "google-maps-react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import "./googleMaps.css";
-import { Climatedata } from "@/utils/interfaces";
-import Controls from "./controls";
-import { MarkerIcon, encodeSvg } from "../../../public/dynamic icons/svgIcon";
+import { Climatedata } from "@/models/interfaces";
+import Controls from "../Map controls/controls";
+import {
+  MarkerIcon,
+  encodeSvg,
+} from "../../../../public/dynamic icons/dynamicIcons";
+import Pagination from "../Pagination/pagination";
+import React from "react";
+
 
 const MapContainer = ({ google }: any) => {
+  const dispatch = useDispatch();
   const data = useSelector((store: any) => {
     return store.custom.data as Climatedata[];
   });
-
-  const decadeYears = useSelector((store: any) => {
-    return store.custom.decadeYears as number[];
+  const decadeData = useSelector((store: any) => {
+    return store.custom.decadeData as Climatedata[];
   });
-  const [markerData, setMarkerData] = useState<Climatedata[]>();
+  const [pageData, setPageData] = useState<Climatedata[]>();
   const [initialCenter, setInitialCenter] = useState<any>({
     lat: 45.43341,
     lng: -73.86586,
   });
-
-  const [infoToolTip, setInfoToolTip] = useState({
+  const [infoToolTip, setInfoToolTip] = useState<any>({
     selectedPlace: {} as Climatedata,
     activeMarker: {} as google.maps.Marker,
     showingInfoWindow: false as boolean,
@@ -48,26 +53,19 @@ const MapContainer = ({ google }: any) => {
       data?.length > 0 &&
         setInitialCenter({ lat: data[0].Lat, lng: data[0].Long });
     }
-    {
-      decadeYears?.length > 0 && getDataForCurrentDecade(decadeYears[0]);
-    }
   }, [data]);
-
-  const getDataForCurrentDecade = (year: number) => {
-    let finalData = [...data];
-    finalData = finalData?.filter((climateData) => {
-      return climateData.Year === year;
-    });
-    setMarkerData(finalData);
-  };
 
   const mapStyles = {
     width: "100%",
     height: "650px",
   };
-  const displayTooltip = (props: IMarkerProps | any, marker: any) => {
+  const displayTooltip = (
+    props: IMarkerProps | any,
+    marker: any,
+    data: Climatedata
+  ) => {
     setInfoToolTip({
-      selectedPlace: props.name.data,
+      selectedPlace: data,
       activeMarker: marker,
       showingInfoWindow: true,
     });
@@ -99,52 +97,67 @@ const MapContainer = ({ google }: any) => {
 
     return encodeSvg(MarkerIcon(markerColor));
   };
+
+  const markerInfo = () => {
+    return (
+      <InfoWindow
+        marker={infoToolTip!?.activeMarker}
+        visible={infoToolTip!?.showingInfoWindow}
+      >
+        <div>
+          <h3 className="Marker-data">
+            Asset Name: {infoToolTip!?.selectedPlace["Asset Name"]}
+          </h3>
+          <h3 className="Marker-data">
+            Business Category:
+            {infoToolTip!?.selectedPlace["Business Category"]}
+          </h3>
+        </div>
+      </InfoWindow>
+    );
+  };
   return (
     <>
-      <Controls getDataForCurrentDecade={getDataForCurrentDecade} />
-      {markerData!?.length > 0 && (
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          justifyContent: "space-evenly",
+        }}
+      >
+        <Controls />
+        <Pagination data={decadeData} setData={setPageData} />
+      </div>
+
+      {pageData!?.length > 0 && (
         <Map
           google={google}
-          zoom={5}
+          zoom={10}
           style={mapStyles}
           initialCenter={initialCenter}
         >
-          {markerData?.map((data: Climatedata, index: number) => {
+          {pageData?.map((data: Climatedata): any => {
             return (
               <Marker
                 icon={SVGMarker(data)}
-                onMouseover={displayTooltip}
-                key={index}
+                onClick={(props: IMarkerProps | any, marker: any) =>
+                  displayTooltip(props, marker, data)
+                }
+                key={data.id}
                 position={{
                   lat: data.Lat,
                   lng: data.Long,
                 }}
-                name={{ data }}
-              ></Marker>
+              />
             );
           })}
-          {infoToolTip.showingInfoWindow && (
-            <InfoWindow
-              marker={infoToolTip.activeMarker}
-              visible={infoToolTip.showingInfoWindow}
-            >
-              <div>
-                <h3 className="Marker-data">
-                  Asset Name: {infoToolTip.selectedPlace["Asset Name"]}
-                </h3>
-                <h3 className="Marker-data">
-                  Business Category:
-                  {infoToolTip.selectedPlace["Business Category"]}
-                </h3>
-              </div>
-            </InfoWindow>
-          )}
+          {markerInfo()}
         </Map>
       )}
     </>
   );
 };
 
-export default GoogleApiWrapper({
+export default React.memo( GoogleApiWrapper({
   apiKey: process.env.NEXT_PUBLIC_GOOGLE_APIKEY as string,
-})(MapContainer);
+})(MapContainer));
